@@ -1,0 +1,42 @@
+name: Build and Test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up CMake
+        uses: lukka/run-cmake@v1
+        with:
+          cmakeListsOrSettingsJson: '.'
+          buildType: 'Debug'
+          buildDirectory: 'build'
+
+      - name: Build project
+        run: cmake --build build --config Debug -- -j$(nproc)
+
+  test:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up CMake
+        uses: lukka/run-cmake@v1
+        with:
+          cmakeListsOrSettingsJson: '.'
+          buildType: 'Debug'
+          buildDirectory: 'build'
+
+      - name: Build and run tests
+        run: cmake --build build --target test
+

@@ -26,6 +26,20 @@ add_compile_options(
     -fstack-usage  # Generate stack usage information
 )
 
+enable_testing()
+
+# Copy examples directory to the build directory
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/examples DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+
+# Define the path to the Unity source file
+set(UNITY_SOURCE ${CMAKE_SOURCE_DIR}/unity/src/unity.c)
+
+# Define the path to the directory containing the Unity header file
+set(UNITY_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/unity/src/)
+
+# include unity for unittests
+include_directories(unity/src)
+
 include_directories(include)
 add_subdirectory(src)
-
+add_subdirectory(tests)
