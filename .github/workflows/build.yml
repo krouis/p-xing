@@ -31,7 +31,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Set up CMake
-        uses: lukka/run-cmake@v1
+        uses: lukka/run-cmake@v3
         with:
           cmakeListsOrSettingsJson: '.'
           buildType: 'Debug'
