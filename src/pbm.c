@@ -1,15 +1,36 @@
 #include "pbm.h"
 
-int read_pbm(const char* pbm_file, pbm_t* pix){
-    int fd=-1;
-    int r=-1;
-    char buff = {'\0'}; //this probably should be a char
-    fd = open(pbm_file, O_RDONLY);
-    if (fd<0) {
+//skip whitespaces and comments
+int skip_whitespace(int fd) {
+    char buff = '\0';
+
+    // skip whitespaces
+    do {
+        if (read(fd,&buff,1)<0) return -1;
+    } while (isspace(buff));
+
+    // if comments skip them
+    int comment = (buff == '#') ? 1 : 0;
+    while (comment>0) {
+        if (read(fd, &buff,1)<0) return -1;
+        if (buff == '\n') {
+            if (read(fd, &buff,1)<0) return -1;
+            // skip whitespaces
+            while (isspace(buff))
+                if(read(fd,&buff,1)<0) return -1;
+            comment = (buff == '#') ? 1 : 0;
+        }
+    }
+    // trackback 1 position before returning
+    if (lseek(fd, -1, SEEK_CUR)==-1) {
         perror(NULL);
         return -1;
     }
+    return 0;
+}
 
+int read_pbm_header(int fd, pbm_t* pix) {
+    char buff = '\0';
     // read magic
     pix->type=-1;
     if(read(fd,&buff,1)==1){
@@ -22,120 +43,129 @@ int read_pbm(const char* pbm_file, pbm_t* pix){
     }
     if (pix->type != 1){
         fprintf(stderr,"format error: not a Plain PBM file\n");
-        goto ret;
+        return 0;
     }
 
-    // skip whitespaces
-    if (read(fd,&buff,1)<0) goto eeof;
-    while (isspace(buff))
-        if (read(fd,&buff,1)<0) goto eeof;
-
-    // if comments skip them
-    int comment = (buff == '#') ? 1 : 0;
-    while (comment>0) {
-        if (read(fd, &buff,1)<0) goto eeof;
-        if (buff == '\n') {
-            if (read(fd, &buff,1)<0) goto eeof;
-            // skip whitespaces
-            while (isspace(buff))
-                if(read(fd,&buff,1)<0) goto eeof;
-            comment = (buff == '#') ? 1 : 0;
-        }
+    if (skip_whitespace(fd)<0) {
+        return -1;
     }
+    return 0;
+}
 
-    //read width
-    if (isdigit(buff)){
-        pix->width = 0;
+int read_dimension(int fd) {
+    char buff = '\0';
+    int dim = 0; // this is a positive integer, -1 is an error
+    //skip any whitespaces
+    if (skip_whitespace(fd)<0) return -1;
+
+    //read number
+    if(read(fd,&buff,1)<0) return -1;
+
+    if (isdigit(buff)) {
         while (isdigit(buff)) {
-            pix->width = (pix->width * 10) + (int) buff-'0';
-            if (read(fd,&buff,1)<0){
-                fprintf(stderr,"unexpected EOF: couldn't read PBM image width\n");
-                goto ret;
+            dim = (dim * 10) + (int) buff-'0';
+            if (read(fd,&buff,1)<0) {
+                return -1;
             }
         }
-
-        if (pix->width > MAX_PBM_LN) {
-            fprintf(stderr,"format error: PBM width %d is over %d limit\n",pix->width, MAX_PBM_LN);
-            goto ret;
-        }
     } else {
-        fprintf(stderr,"format error: did not find PBM width\n");
-        goto ret;
+        fprintf(stderr,"format error: did not find dimension\n");
+        return -1;
     }
+    return dim;
+}
 
-    // skip whitespaces
-    while (isspace(buff))
-        if(read(fd,&buff,1)<0) goto eeof;
-
-    //read height
-    if (isdigit(buff)){
-        pix->height = 0;
-        while (isdigit(buff)) {
-            pix->height = (pix->height * 10) + (int) buff-'0';
-            if (read(fd,&buff,1)<0){
-                fprintf(stderr,"unexpected EOF: couldn't read PBM image height\n");
-                goto ret;
-            }
-        }
-
-        if (pix->height > MAX_PBM_CL) {
-            fprintf(stderr,"format error: PBM height %d is over %d limit\n",pix->height, MAX_PBM_CL);
-            goto ret;
-        }
-    } else {
-        fprintf(stderr,"format error: did not find PBM height\n");
-        goto ret;
-    }
-
-    // skip whitespaces
-    while (isspace(buff))
-        if(read(fd,&buff,1)<0) goto eeof;
-
-    // read the image and fill the data table
+int read_pbm_data(int fd, pbm_t* pix) {
+    char buff = '\0';
     int i=0;
     int j=0;
-    while(buff!=EOF && (pix->width*j)+i<pix->width*pix->height){
+
+    // skip whitespaces
+    do {
+        if(read(fd,&buff,1)<0) {
+            fprintf(stderr,"format error: unexpected EOF\n");
+            return -1;
+        }
+    }while (isspace(buff));
+
+    // read the image and fill the data table
+    while(buff!=EOF && (pix->width*j)+i<pix->width*pix->height) {
         if (buff=='0'||buff=='1') {
             pix->data[(pix->width*j)+i] = buff-'0';
-            if ((pix->width*j)+i==pix->width*pix->height-1){
-                r=0;
-                break;
-            }
+            if ((pix->width*j)+i==pix->width*pix->height-1) return 0;
             i++;
-            if(read(fd,&buff,1)<0) goto eeof;
+            if(read(fd,&buff,1)<0) {
+                fprintf(stderr,"format error: unexpected EOF\n");
+                return -1;
+            }
         }
         if (buff==EOF) {
             if ((i+1)*(j+1)!=pix->width*pix->height) {
                 fprintf(stderr,"unexpected EOF: couldn't read PBM image of width %d and height %d\n",pix->width, pix->height);
-                goto ret;
+                return -1;
             }
-            r=0;
-            break;
+            return 0;
         }
 
         // skip whitespaces
-        while (isspace(buff)){
-            if (buff=='\n'){
+        while (isspace(buff)) {
+            if (buff=='\n') {
                 j++;
                 i=0;
             }
-            if(read(fd,&buff,1)<0) goto eeof;
+            if(read(fd,&buff,1)<0) {
+                fprintf(stderr,"format error: unexpected EOF\n");
+                return -1;
+            }
         }
     }
-    goto ret;
+    return 0;
+}
 
-eeof:
-    fprintf(stderr,"format error: unexpected EOF\n");
-    r=-1;
+int read_pbm(const char* pbm_file, pbm_t* pix) {
+    int fd=-1;
+    int r=0;
+
+    fd = open(pbm_file, O_RDONLY);
+    if (fd<0) {
+        perror(NULL);
+        return -1;
+    }
+
+    if (read_pbm_header(fd, pix)!=0) {
+        r=-1;
+        goto ret;
+    }
+
+    pix->width = read_dimension(fd);
+    if (pix->width<=0 || pix->width > MAX_PBM_LN) {
+        fprintf(stderr,"format error: could not read correct PBM width\n");
+        r=-1;
+        goto ret;
+    }
+
+    pix->height = read_dimension(fd);
+    if (pix->height<=0 || pix->height > MAX_PBM_CL) {
+        fprintf(stderr,"format error: could not read correct PBM height\n");
+        r=-1;
+        goto ret;
+    }
+
+    if (read_pbm_data(fd, pix) != 0) {
+        fprintf(stderr,"format error: could not read correct PBM height\n");
+        r=-1;
+        goto ret;
+    }
+
 ret:
     if (close(fd)<0) {
-        perror(NULL);
+        perror("error closing pbm file");
         r=-1;
     }
     return r;
 }
 
-int print_pbm(pbm_t* pix){
+int print_pbm(pbm_t* pix) {
     int i = 0;
     int j = 0;
     for (int w=0; w<pix->width;w++)
