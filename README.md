@@ -18,9 +18,9 @@ The goal is to generate P-Xing grids from PBM files and construct PBM files from
 
 To build P-XING from source, follow these steps:
 
-1. Clone the repository:
+1. Clone the repository (and its unity submodule for unit tests):
    ```
-   git clone https://github.com/krouis/p-xing.git
+   git clone --recurse-submodules https://github.com/krouis/p-xing.git
    ```
 
 2. Navigate to the project directory:
@@ -29,6 +29,7 @@ To build P-XING from source, follow these steps:
    ```
 
 3. Create a build directory and navigate to it:
+> :warning: **Note:** If you forgot to initialize the Unity test submodule you need to run `git submodule update --init --recursive` before building the project.
    ```
    mkdir build
    cd build
@@ -49,7 +50,6 @@ To build P-XING from source, follow these steps:
 ## Usage
 
 After building P-XING, you can run it from the command line. Here's the basic usage:
-
 ```
 ./p-xing [OPTIONS] <PBM_FILE>
 ```
@@ -83,6 +83,19 @@ print p-xing lines v1:
 ## Example PBM File
 
 An example PBM file (`p-xing.pbm`) is provided in the `examples` directory. You can use this file to test P-XING.
+
+## Running Unit Tests
+
+After building, run unit tests using:
+```
+cd build
+ctest
+```
+
+Alternatively, you can run the test binary directly:
+```
+./tests/pxing_tests
+```
 
 ## License
 
