@@ -26,6 +26,9 @@ add_compile_options(
     -fstack-usage  # Generate stack usage information
 )
 
+find_package(Curses REQUIRED)
+include_directories(${CURSES_INCLUDE_DIR})
+
 enable_testing()
 
 # Copy examples directory to the build directory

@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 #include "pxing.h"
 
 static void compute_line_clue(const int *pixels, int len, clue_t *clue) {
@@ -34,6 +35,12 @@ int compute_clues(const pbm_t *pix, pxing_t *puzzle) {
         compute_line_clue(col_pixels, pix->height, &puzzle->cols[col]);
     }
     return 0;
+}
+
+void game_init(game_t *game) {
+    memset(game->grid, CELL_UNKNOWN, sizeof(game->grid));
+    game->cursor_row = 0;
+    game->cursor_col = 0;
 }
 
 void print_row_clues(const pxing_t *puzzle) {

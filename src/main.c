@@ -3,6 +3,7 @@
 #include <string.h>
 #include "pbm.h"
 #include "pxing.h"
+#include "render.h"
 
 void display_usage(const char* progname) {
     printf("Usage: %s [OPTIONS] <PBM_FILE>\n", progname);
@@ -44,11 +45,19 @@ int main(int argc, char* argv[]) {
     if (read_pbm(argv[1], &pix) != 0) {
         return EXIT_FAILURE;
     }
-    print_pbm(&pix);
 
     pxing_t puzzle;
     compute_clues(&pix, &puzzle);
-    print_row_clues(&puzzle);
-    print_col_clues(&puzzle);
+
+    game_t game;
+    game_init(&game);
+
+    render_init();
+    render_draw(&puzzle, &game);
+
+    while (render_getch() != 'q')
+        ;
+
+    render_cleanup();
     return EXIT_SUCCESS;
 }

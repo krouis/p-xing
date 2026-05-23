@@ -1,6 +1,8 @@
 # Add executable
-add_executable(p-xing main.c pbm.c pxing.c)
+add_executable(p-xing main.c pbm.c pxing.c render.c)
 
 # Include directories
 target_include_directories(p-xing PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../include)
+
+target_link_libraries(p-xing ${CURSES_LIBRARIES})
 
