@@ -160,25 +160,3 @@ int print_pbm(pbm_t* pix) {
     return 0;
 }
 
-int print_pxing_lines(pbm_t* pix) {
-    int cnt=-1;
-    printf("print p-xing lines v1:\n");
-    for (int i=0; i<pix->height;i++) {
-        int j=0;
-        cnt = -1;
-        while (j<pix->width){
-            if(pix->data[(pix->width*i)+j]==0) {
-                if (cnt>0) {
-                    printf("%d ",cnt);
-                    cnt=0;
-                }
-            }else
-                (cnt<0) ? cnt=1 : cnt++;
-            j++;
-        }
-        if (cnt>0)  printf("%d",cnt);
-        if (cnt<0) printf("0"); //all zeros line
-        printf("\n");
-    }
-    return 0;
-}

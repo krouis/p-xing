@@ -22,6 +22,5 @@ typedef struct pbm{
 
 int read_pbm(const char* pbm_file, pbm_t* pix);
 int print_pbm(pbm_t* pix);
-int print_pxing_lines(pbm_t* pix);
 
 #endif /* PBM_H */

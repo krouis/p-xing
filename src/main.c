@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "pbm.h"
+#include "pxing.h"
 
 void display_usage(const char* progname) {
     printf("Usage: %s [OPTIONS] <PBM_FILE>\n", progname);
@@ -44,6 +45,10 @@ int main(int argc, char* argv[]) {
         return EXIT_FAILURE;
     }
     print_pbm(&pix);
-    print_pxing_lines(&pix);
+
+    pxing_t puzzle;
+    compute_clues(&pix, &puzzle);
+    print_row_clues(&puzzle);
+    print_col_clues(&puzzle);
     return EXIT_SUCCESS;
 }
