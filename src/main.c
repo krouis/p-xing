@@ -58,7 +58,9 @@ int main(int argc, char* argv[]) {
     do {
         render_draw(&puzzle, &game);
         ch = render_getch();
-        game_handle_key(&game, &puzzle, ch);
+        if (!game.won)
+            game_handle_key(&game, &puzzle, ch);
+        game.won = game_check_win(&game, &puzzle);
     } while (ch != 'q');
 
     render_cleanup();

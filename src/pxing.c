@@ -42,6 +42,34 @@ void game_init(game_t *game) {
     memset(game->grid, CELL_UNKNOWN, sizeof(game->grid));
     game->cursor_row = 0;
     game->cursor_col = 0;
+    game->won = 0;
+}
+
+int game_check_win(const game_t *game, const pxing_t *puzzle) {
+    int pixels[MAX_PBM_LN];
+    clue_t actual;
+
+    for (int r = 0; r < puzzle->height; r++) {
+        for (int c = 0; c < puzzle->width; c++)
+            pixels[c] = (game->grid[r * puzzle->width + c] == CELL_FILLED) ? 1 : 0;
+        compute_line_clue(pixels, puzzle->width, &actual);
+        const clue_t *expected = &puzzle->rows[r];
+        if (actual.count != expected->count) return 0;
+        for (int k = 0; k < actual.count; k++)
+            if (actual.runs[k] != expected->runs[k]) return 0;
+    }
+
+    for (int c = 0; c < puzzle->width; c++) {
+        for (int r = 0; r < puzzle->height; r++)
+            pixels[r] = (game->grid[r * puzzle->width + c] == CELL_FILLED) ? 1 : 0;
+        compute_line_clue(pixels, puzzle->height, &actual);
+        const clue_t *expected = &puzzle->cols[c];
+        if (actual.count != expected->count) return 0;
+        for (int k = 0; k < actual.count; k++)
+            if (actual.runs[k] != expected->runs[k]) return 0;
+    }
+
+    return 1;
 }
 
 void game_handle_key(game_t *game, const pxing_t *puzzle, int key) {

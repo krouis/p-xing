@@ -10,6 +10,7 @@
 #define CP_CURSOR  2
 #define CP_FILLED  3
 #define CP_CROSSED 4
+#define CP_WIN     5
 
 static int get_col_depth(const pxing_t *p) {
     int m = 1;
@@ -43,6 +44,7 @@ void render_init(void) {
         init_pair(CP_CURSOR,  COLOR_BLACK,   COLOR_YELLOW);
         init_pair(CP_FILLED,  COLOR_BLACK,   COLOR_WHITE);
         init_pair(CP_CROSSED, COLOR_RED,    -1);
+        init_pair(CP_WIN,     COLOR_BLACK,   COLOR_GREEN);
     }
 }
 
@@ -116,9 +118,15 @@ void render_draw(const pxing_t *puzzle, const game_t *game) {
         }
     }
 
-    /* Status bar */
-    mvprintw(depth + puzzle->height + 1, 0,
-             "arrows: move  space: fill  x: cross  q: quit");
+    /* Status bar / win banner */
+    int status_y = depth + puzzle->height + 1;
+    if (game && game->won) {
+        if (has_colors()) attron(COLOR_PAIR(CP_WIN));
+        mvprintw(status_y, 0, " *** Solved! Press q to quit. *** ");
+        if (has_colors()) attroff(COLOR_PAIR(CP_WIN));
+    } else {
+        mvprintw(status_y, 0, "arrows: move  space: fill  x: cross  q: quit");
+    }
 
     refresh();
 }
