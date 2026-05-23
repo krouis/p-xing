@@ -31,8 +31,9 @@ include_directories(${CURSES_INCLUDE_DIR})
 
 enable_testing()
 
-# Copy examples directory to the build directory
+# Copy examples and puzzles directories to the build directory
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/examples DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/puzzles  DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 # Define the path to the Unity source file
 set(UNITY_SOURCE ${CMAKE_SOURCE_DIR}/unity/src/unity.c)

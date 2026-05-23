@@ -1,0 +1,10 @@
+P1
+# house shape: triangular roof, full-width base, open interior
+7 7
+0 0 0 1 0 0 0
+0 0 1 1 1 0 0
+0 1 1 1 1 1 0
+1 1 1 1 1 1 1
+1 1 0 0 0 1 1
+1 1 0 0 0 1 1
+1 1 1 1 1 1 1

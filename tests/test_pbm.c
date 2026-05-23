@@ -11,7 +11,7 @@ void tearDown(void) {
 
 void test_read_pbm_with_example_file(void) {
     pbm_t pix;
-    int result = read_pbm("../examples/p-xing.pbm", &pix);
+    int result = read_pbm("examples/p-xing.pbm", &pix);
 
     TEST_ASSERT_EQUAL_INT(0, result);
     TEST_ASSERT_EQUAL_INT(36, pix.width);
@@ -177,6 +177,77 @@ void test_game_elapsed_seconds_non_negative(void) {
     TEST_ASSERT_GREATER_OR_EQUAL_INT(0, game_elapsed_seconds(&game));
 }
 
+/* --- Bundled puzzle sanity checks --- */
+
+void test_cross_puzzle_dimensions_and_clues(void) {
+    pbm_t pix;
+    TEST_ASSERT_EQUAL_INT(0, read_pbm("puzzles/cross-5x5.pbm", &pix));
+    TEST_ASSERT_EQUAL_INT(5, pix.width);
+    TEST_ASSERT_EQUAL_INT(5, pix.height);
+
+    pxing_t puzzle;
+    compute_clues(&pix, &puzzle);
+
+    /* Middle row / col are full — clue [5] */
+    TEST_ASSERT_EQUAL_INT(1, puzzle.rows[2].count);
+    TEST_ASSERT_EQUAL_INT(5, puzzle.rows[2].runs[0]);
+    TEST_ASSERT_EQUAL_INT(1, puzzle.cols[2].count);
+    TEST_ASSERT_EQUAL_INT(5, puzzle.cols[2].runs[0]);
+
+    /* Corner rows / cols have a single cell — clue [1] */
+    TEST_ASSERT_EQUAL_INT(1, puzzle.rows[0].count);
+    TEST_ASSERT_EQUAL_INT(1, puzzle.rows[0].runs[0]);
+    TEST_ASSERT_EQUAL_INT(1, puzzle.cols[0].count);
+    TEST_ASSERT_EQUAL_INT(1, puzzle.cols[0].runs[0]);
+}
+
+void test_arrow_puzzle_dimensions_and_clues(void) {
+    pbm_t pix;
+    TEST_ASSERT_EQUAL_INT(0, read_pbm("puzzles/arrow-5x5.pbm", &pix));
+    TEST_ASSERT_EQUAL_INT(5, pix.width);
+    TEST_ASSERT_EQUAL_INT(5, pix.height);
+
+    pxing_t puzzle;
+    compute_clues(&pix, &puzzle);
+
+    /* Middle row (widest part): clue [4] */
+    TEST_ASSERT_EQUAL_INT(1, puzzle.rows[2].count);
+    TEST_ASSERT_EQUAL_INT(4, puzzle.rows[2].runs[0]);
+
+    /* Col 0 is empty: clue [0] */
+    TEST_ASSERT_EQUAL_INT(1, puzzle.cols[0].count);
+    TEST_ASSERT_EQUAL_INT(0, puzzle.cols[0].runs[0]);
+
+    /* Col 1 is fully filled: clue [5] */
+    TEST_ASSERT_EQUAL_INT(1, puzzle.cols[1].count);
+    TEST_ASSERT_EQUAL_INT(5, puzzle.cols[1].runs[0]);
+}
+
+void test_house_puzzle_dimensions_and_clues(void) {
+    pbm_t pix;
+    TEST_ASSERT_EQUAL_INT(0, read_pbm("puzzles/house-7x7.pbm", &pix));
+    TEST_ASSERT_EQUAL_INT(7, pix.width);
+    TEST_ASSERT_EQUAL_INT(7, pix.height);
+
+    pxing_t puzzle;
+    compute_clues(&pix, &puzzle);
+
+    /* Row 3 (widest, full): clue [7] */
+    TEST_ASSERT_EQUAL_INT(1, puzzle.rows[3].count);
+    TEST_ASSERT_EQUAL_INT(7, puzzle.rows[3].runs[0]);
+
+    /* Rows 4 and 5 (walls with gap): clue [2, 2] */
+    TEST_ASSERT_EQUAL_INT(2, puzzle.rows[4].count);
+    TEST_ASSERT_EQUAL_INT(2, puzzle.rows[4].runs[0]);
+    TEST_ASSERT_EQUAL_INT(2, puzzle.rows[4].runs[1]);
+    TEST_ASSERT_EQUAL_INT(2, puzzle.rows[5].count);
+
+    /* Centre column (col 3): apex + rows 1-3 + row 6 → [4, 1] */
+    TEST_ASSERT_EQUAL_INT(2, puzzle.cols[3].count);
+    TEST_ASSERT_EQUAL_INT(4, puzzle.cols[3].runs[0]);
+    TEST_ASSERT_EQUAL_INT(1, puzzle.cols[3].runs[1]);
+}
+
 void test_game_elapsed_frozen_on_win(void) {
     game_t game;
     game_init(&game);
@@ -198,6 +269,9 @@ int main() {
     RUN_TEST(test_game_handle_key_cursor_bounds);
     RUN_TEST(test_game_elapsed_seconds_non_negative);
     RUN_TEST(test_game_elapsed_frozen_on_win);
+    RUN_TEST(test_cross_puzzle_dimensions_and_clues);
+    RUN_TEST(test_arrow_puzzle_dimensions_and_clues);
+    RUN_TEST(test_house_puzzle_dimensions_and_clues);
     return UNITY_END();
 }
 
