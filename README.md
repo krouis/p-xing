@@ -72,11 +72,11 @@ Example:
 ------------------------------------------------------------------------
 print p-xing lines v1:
 0
-3 1 1 2 1 1 3
-1 1 1 1 2 1 1
-3 4 2 2 1 2 1 2
-1 1 1 2 1 1 1 1
-1 1 1 2 1 1 3
+3 1 1 2 1 1 3 
+1 1 1 1 2 1 1 
+3 4 2 2 1 2 1 2 
+1 1 1 2 1 1 1 1 
+1 1 1 2 1 1 3 
 0
 ```
 
@@ -94,7 +94,7 @@ ctest
 
 Alternatively, you can run the test binary directly:
 ```
-./tests/pxing_tests
+./tests/test_pbm
 ```
 
 ## License

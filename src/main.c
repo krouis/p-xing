@@ -40,7 +40,9 @@ int main(int argc, char* argv[]) {
         }
     }
     pbm_t pix;
-    read_pbm(argv[1], &pix);
+    if (read_pbm(argv[1], &pix) != 0) {
+        return EXIT_FAILURE;
+    }
     print_pbm(&pix);
     print_pxing_lines(&pix);
     return EXIT_SUCCESS;

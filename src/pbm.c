@@ -2,22 +2,22 @@
 
 //skip whitespaces and comments
 int skip_whitespace(int fd) {
-    char buff = '\0';
+    unsigned char buff = '\0';
 
     // skip whitespaces
     do {
-        if (read(fd,&buff,1)<0) return -1;
+        if (read(fd,&buff,1)<=0) return -1;
     } while (isspace(buff));
 
     // if comments skip them
     int comment = (buff == '#') ? 1 : 0;
     while (comment>0) {
-        if (read(fd, &buff,1)<0) return -1;
+        if (read(fd, &buff,1)<=0) return -1;
         if (buff == '\n') {
-            if (read(fd, &buff,1)<0) return -1;
+            if (read(fd, &buff,1)<=0) return -1;
             // skip whitespaces
             while (isspace(buff))
-                if(read(fd,&buff,1)<0) return -1;
+                if(read(fd,&buff,1)<=0) return -1;
             comment = (buff == '#') ? 1 : 0;
         }
     }
@@ -30,7 +30,7 @@ int skip_whitespace(int fd) {
 }
 
 int read_pbm_header(int fd, pbm_t* pix) {
-    char buff = '\0';
+    unsigned char buff = '\0';
     // read magic
     pix->type=-1;
     if(read(fd,&buff,1)==1){
@@ -43,7 +43,7 @@ int read_pbm_header(int fd, pbm_t* pix) {
     }
     if (pix->type != 1){
         fprintf(stderr,"format error: not a Plain PBM file\n");
-        return 0;
+        return -1;
     }
 
     if (skip_whitespace(fd)<0) {
@@ -53,18 +53,18 @@ int read_pbm_header(int fd, pbm_t* pix) {
 }
 
 int read_dimension(int fd) {
-    char buff = '\0';
+    unsigned char buff = '\0';
     int dim = 0; // this is a positive integer, -1 is an error
     //skip any whitespaces
     if (skip_whitespace(fd)<0) return -1;
 
     //read number
-    if(read(fd,&buff,1)<0) return -1;
+    if(read(fd,&buff,1)<=0) return -1;
 
     if (isdigit(buff)) {
         while (isdigit(buff)) {
-            dim = (dim * 10) + (int) buff-'0';
-            if (read(fd,&buff,1)<0) {
+            dim = (dim * 10) + (buff - '0');
+            if (read(fd,&buff,1)<=0) {
                 return -1;
             }
         }
@@ -76,47 +76,21 @@ int read_dimension(int fd) {
 }
 
 int read_pbm_data(int fd, pbm_t* pix) {
-    char buff = '\0';
-    int i=0;
-    int j=0;
+    unsigned char buff;
+    int pixels_read = 0;
+    int pixels_expected = pix->width * pix->height;
 
-    // skip whitespaces
-    do {
-        if(read(fd,&buff,1)<0) {
-            fprintf(stderr,"format error: unexpected EOF\n");
+    while (pixels_read < pixels_expected) {
+        if (read(fd, &buff, 1) <= 0) {
+            fprintf(stderr, "unexpected EOF: couldn't read PBM image of width %d and height %d\n",
+                    pix->width, pix->height);
             return -1;
         }
-    }while (isspace(buff));
-
-    // read the image and fill the data table
-    while(buff!=EOF && (pix->width*j)+i<pix->width*pix->height) {
-        if (buff=='0'||buff=='1') {
-            pix->data[(pix->width*j)+i] = buff-'0';
-            if ((pix->width*j)+i==pix->width*pix->height-1) return 0;
-            i++;
-            if(read(fd,&buff,1)<0) {
-                fprintf(stderr,"format error: unexpected EOF\n");
-                return -1;
-            }
-        }
-        if (buff==EOF) {
-            if ((i+1)*(j+1)!=pix->width*pix->height) {
-                fprintf(stderr,"unexpected EOF: couldn't read PBM image of width %d and height %d\n",pix->width, pix->height);
-                return -1;
-            }
-            return 0;
-        }
-
-        // skip whitespaces
-        while (isspace(buff)) {
-            if (buff=='\n') {
-                j++;
-                i=0;
-            }
-            if(read(fd,&buff,1)<0) {
-                fprintf(stderr,"format error: unexpected EOF\n");
-                return -1;
-            }
+        if (buff == '0' || buff == '1') {
+            pix->data[pixels_read++] = buff - '0';
+        } else if (!isspace(buff)) {
+            fprintf(stderr, "format error: invalid character '%c' in PBM data\n", buff);
+            return -1;
         }
     }
     return 0;
