@@ -117,7 +117,8 @@ void render_draw(const pxing_t *puzzle, const game_t *game) {
     }
 
     /* Status bar */
-    mvprintw(depth + puzzle->height + 1, 0, "q: quit");
+    mvprintw(depth + puzzle->height + 1, 0,
+             "arrows: move  space: fill  x: cross  q: quit");
 
     refresh();
 }

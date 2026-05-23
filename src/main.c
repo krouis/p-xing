@@ -53,10 +53,13 @@ int main(int argc, char* argv[]) {
     game_init(&game);
 
     render_init();
-    render_draw(&puzzle, &game);
 
-    while (render_getch() != 'q')
-        ;
+    int ch;
+    do {
+        render_draw(&puzzle, &game);
+        ch = render_getch();
+        game_handle_key(&game, &puzzle, ch);
+    } while (ch != 'q');
 
     render_cleanup();
     return EXIT_SUCCESS;

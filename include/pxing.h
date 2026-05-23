@@ -31,6 +31,7 @@ typedef struct {
 
 int  compute_clues(const pbm_t *pix, pxing_t *puzzle);
 void game_init(game_t *game);
+void game_handle_key(game_t *game, const pxing_t *puzzle, int key);
 void print_row_clues(const pxing_t *puzzle);
 void print_col_clues(const pxing_t *puzzle);
 
