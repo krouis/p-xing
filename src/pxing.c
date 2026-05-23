@@ -40,9 +40,17 @@ int compute_clues(const pbm_t *pix, pxing_t *puzzle) {
 
 void game_init(game_t *game) {
     memset(game->grid, CELL_UNKNOWN, sizeof(game->grid));
-    game->cursor_row = 0;
-    game->cursor_col = 0;
-    game->won = 0;
+    game->cursor_row  = 0;
+    game->cursor_col  = 0;
+    game->won         = 0;
+    game->start_time  = time(NULL);
+    game->solve_seconds = 0;
+}
+
+int game_elapsed_seconds(const game_t *game) {
+    if (game->won)
+        return game->solve_seconds;
+    return (int)(time(NULL) - game->start_time);
 }
 
 int game_check_win(const game_t *game, const pxing_t *puzzle) {

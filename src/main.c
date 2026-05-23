@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ncurses.h>
 #include "pbm.h"
 #include "pxing.h"
 #include "render.h"
@@ -58,9 +59,15 @@ int main(int argc, char* argv[]) {
     do {
         render_draw(&puzzle, &game);
         ch = render_getch();
-        if (!game.won)
+        if (ch == 'r') {
+            game_init(&game);
+        } else if (ch != ERR && !game.won) {
             game_handle_key(&game, &puzzle, ch);
-        game.won = game_check_win(&game, &puzzle);
+            if (game_check_win(&game, &puzzle)) {
+                game.won          = 1;
+                game.solve_seconds = game_elapsed_seconds(&game);
+            }
+        }
     } while (ch != 'q');
 
     render_cleanup();

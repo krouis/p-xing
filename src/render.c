@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdio.h>
 #include "render.h"
+#include "pxing.h"
 
 #define CELL_W 2  /* chars per grid column: cell char + trailing space */
 
@@ -33,10 +34,10 @@ static int get_row_clue_width(const pxing_t *p) {
 
 void render_init(void) {
     initscr();
-    cbreak();
     noecho();
     keypad(stdscr, TRUE);
     curs_set(0);
+    halfdelay(5); /* getch() returns ERR after 0.5 s — keeps the timer live */
     if (has_colors()) {
         start_color();
         use_default_colors();
@@ -118,14 +119,22 @@ void render_draw(const pxing_t *puzzle, const game_t *game) {
         }
     }
 
-    /* Status bar / win banner */
+    /* Timer and status bar / win banner */
+    int elapsed = game ? game_elapsed_seconds(game) : 0;
+    int mm = elapsed / 60;
+    int ss = elapsed % 60;
     int status_y = depth + puzzle->height + 1;
+
     if (game && game->won) {
         if (has_colors()) attron(COLOR_PAIR(CP_WIN));
-        mvprintw(status_y, 0, " *** Solved! Press q to quit. *** ");
+        mvprintw(status_y, 0,
+                 " *** Solved in %02d:%02d!  r: play again  q: quit *** ",
+                 mm, ss);
         if (has_colors()) attroff(COLOR_PAIR(CP_WIN));
     } else {
-        mvprintw(status_y, 0, "arrows: move  space: fill  x: cross  q: quit");
+        mvprintw(status_y, 0,
+                 "arrows: move  space: fill  x: cross  r: restart  q: quit"
+                 "  [%02d:%02d]", mm, ss);
     }
 
     refresh();

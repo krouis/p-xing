@@ -1,6 +1,7 @@
 #ifndef PXING_H
 #define PXING_H
 
+#include <time.h>
 #include "pbm.h"
 
 #define MAX_CLUES ((MAX_PBM_LN + 1) / 2)
@@ -28,10 +29,13 @@ typedef struct {
     int cursor_row;
     int cursor_col;
     int won;
+    time_t start_time;
+    int    solve_seconds; /* frozen at win time */
 } game_t;
 
 int  compute_clues(const pbm_t *pix, pxing_t *puzzle);
 void game_init(game_t *game);
+int  game_elapsed_seconds(const game_t *game);
 void game_handle_key(game_t *game, const pxing_t *puzzle, int key);
 int  game_check_win(const game_t *game, const pxing_t *puzzle);
 void print_row_clues(const pxing_t *puzzle);
