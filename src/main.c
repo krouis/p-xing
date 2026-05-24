@@ -69,10 +69,8 @@ int main(int argc, char* argv[]) {
             game_undo(&game);
         } else if (ch != ERR && !game.won) {
             game_handle_key(&game, &puzzle, ch);
-            if (game_check_win(&game, &puzzle)) {
-                game.solve_seconds = game_elapsed_seconds(&game);
-                game.won           = 1;
-            }
+            if (game_check_win(&game, &puzzle))
+                game_set_won(&game);
         }
     } while (ch != 'q');
 

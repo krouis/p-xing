@@ -258,6 +258,20 @@ void test_game_elapsed_frozen_on_win(void) {
 
 /* --- Undo tests --- */
 
+void test_game_set_won_records_elapsed_time(void) {
+    game_t game;
+    game_init(&game);
+    /* Backdate start_time to simulate 10 s of play. */
+    game.start_time = time(NULL) - 10;
+
+    game_set_won(&game);
+
+    TEST_ASSERT_EQUAL_INT(1, game.won);
+    /* The original bug set won=1 before capturing the time, causing
+     * game_elapsed_seconds to short-circuit and return solve_seconds (0). */
+    TEST_ASSERT_GREATER_OR_EQUAL_INT(10, game.solve_seconds);
+}
+
 void test_game_undo_empty_stack(void) {
     game_t game;
     game_init(&game);
@@ -479,6 +493,7 @@ int main() {
     RUN_TEST(test_cross_puzzle_dimensions_and_clues);
     RUN_TEST(test_arrow_puzzle_dimensions_and_clues);
     RUN_TEST(test_house_puzzle_dimensions_and_clues);
+    RUN_TEST(test_game_set_won_records_elapsed_time);
     RUN_TEST(test_game_undo_empty_stack);
     RUN_TEST(test_game_undo_restores_state);
     RUN_TEST(test_game_undo_multiple_steps);

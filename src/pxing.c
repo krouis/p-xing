@@ -56,6 +56,11 @@ static void game_push_undo(game_t *game) {
     game->undo_top++;
 }
 
+void game_set_won(game_t *game) {
+    game->solve_seconds = game_elapsed_seconds(game);
+    game->won           = 1;
+}
+
 void game_undo(game_t *game) {
     if (game->undo_top == 0) return;
     game->undo_top--;

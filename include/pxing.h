@@ -45,6 +45,7 @@ int  game_elapsed_seconds(const game_t *game);
 void game_handle_key(game_t *game, const pxing_t *puzzle, int key);
 int  game_check_win(const game_t *game, const pxing_t *puzzle);
 void game_undo(game_t *game);
+void game_set_won(game_t *game);
 void game_compute_errors(const game_t *game, const pxing_t *puzzle,
                          int errors[MAX_PBM_LN * MAX_PBM_CL]);
 void print_row_clues(const pxing_t *puzzle);
