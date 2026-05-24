@@ -1,4 +1,3 @@
-#include <ncurses.h>
 #include "unity.h"
 #include "pbm.h"
 #include "pxing.h"
@@ -151,23 +150,23 @@ void test_game_handle_key_cursor_bounds(void) {
     game_init(&game);
 
     /* Can't move left or up from origin */
-    game_handle_key(&game, &puzzle, KEY_LEFT);
+    game_handle_key(&game, &puzzle, PXING_KEY_LEFT);
     TEST_ASSERT_EQUAL_INT(0, game.cursor_col);
-    game_handle_key(&game, &puzzle, KEY_UP);
+    game_handle_key(&game, &puzzle, PXING_KEY_UP);
     TEST_ASSERT_EQUAL_INT(0, game.cursor_row);
 
     /* Move to bottom-right corner */
-    game_handle_key(&game, &puzzle, KEY_RIGHT);
-    game_handle_key(&game, &puzzle, KEY_RIGHT);
-    game_handle_key(&game, &puzzle, KEY_DOWN);
-    game_handle_key(&game, &puzzle, KEY_DOWN);
+    game_handle_key(&game, &puzzle, PXING_KEY_RIGHT);
+    game_handle_key(&game, &puzzle, PXING_KEY_RIGHT);
+    game_handle_key(&game, &puzzle, PXING_KEY_DOWN);
+    game_handle_key(&game, &puzzle, PXING_KEY_DOWN);
     TEST_ASSERT_EQUAL_INT(2, game.cursor_col);
     TEST_ASSERT_EQUAL_INT(2, game.cursor_row);
 
     /* Can't move beyond the grid edge */
-    game_handle_key(&game, &puzzle, KEY_RIGHT);
+    game_handle_key(&game, &puzzle, PXING_KEY_RIGHT);
     TEST_ASSERT_EQUAL_INT(2, game.cursor_col);
-    game_handle_key(&game, &puzzle, KEY_DOWN);
+    game_handle_key(&game, &puzzle, PXING_KEY_DOWN);
     TEST_ASSERT_EQUAL_INT(2, game.cursor_row);
 }
 
@@ -315,7 +314,7 @@ void test_game_undo_multiple_steps(void) {
     /* Fill (0,0): push undo #1; auto-crosses (0,1) and (0,2). */
     game_handle_key(&game, &puzzle, ' ');
     /* Move right to (0,1): no undo push. */
-    game_handle_key(&game, &puzzle, KEY_RIGHT);
+    game_handle_key(&game, &puzzle, PXING_KEY_RIGHT);
     /* Toggle cross on already-crossed (0,1): push undo #2; (0,1) → UNKNOWN. */
     game_handle_key(&game, &puzzle, 'x');
 
@@ -377,9 +376,9 @@ void test_game_auto_cross_completes_col(void) {
     game_init(&game);
 
     /* Navigate to (2,1); col 1 clue is [1]. */
-    game_handle_key(&game, &puzzle, KEY_DOWN);
-    game_handle_key(&game, &puzzle, KEY_DOWN);
-    game_handle_key(&game, &puzzle, KEY_RIGHT);
+    game_handle_key(&game, &puzzle, PXING_KEY_DOWN);
+    game_handle_key(&game, &puzzle, PXING_KEY_DOWN);
+    game_handle_key(&game, &puzzle, PXING_KEY_RIGHT);
     TEST_ASSERT_EQUAL_INT(2, game.cursor_row);
     TEST_ASSERT_EQUAL_INT(1, game.cursor_col);
 

@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <string.h>
-#include <ncurses.h>
 #include "pxing.h"
 
 static void compute_line_clue(const int *pixels, int len, clue_t *clue) {
@@ -139,10 +138,10 @@ int game_check_win(const game_t *game, const pxing_t *puzzle) {
 void game_handle_key(game_t *game, const pxing_t *puzzle, int key) {
     cell_state_t *cell = &game->grid[game->cursor_row * puzzle->width + game->cursor_col];
     switch (key) {
-        case KEY_UP:    if (game->cursor_row > 0)                game->cursor_row--; break;
-        case KEY_DOWN:  if (game->cursor_row < puzzle->height-1) game->cursor_row++; break;
-        case KEY_LEFT:  if (game->cursor_col > 0)                game->cursor_col--; break;
-        case KEY_RIGHT: if (game->cursor_col < puzzle->width-1)  game->cursor_col++; break;
+        case PXING_KEY_UP:    if (game->cursor_row > 0)                game->cursor_row--; break;
+        case PXING_KEY_DOWN:  if (game->cursor_row < puzzle->height-1) game->cursor_row++; break;
+        case PXING_KEY_LEFT:  if (game->cursor_col > 0)                game->cursor_col--; break;
+        case PXING_KEY_RIGHT: if (game->cursor_col < puzzle->width-1)  game->cursor_col++; break;
         case ' ':
             game_push_undo(game);
             *cell = (*cell == CELL_FILLED) ? CELL_UNKNOWN : CELL_FILLED;

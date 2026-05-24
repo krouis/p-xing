@@ -7,6 +7,12 @@
 #define MAX_CLUES ((MAX_PBM_LN + 1) / 2)
 #define MAX_UNDO  16
 
+/* Abstract directional keys — above ASCII range, backend-independent. */
+#define PXING_KEY_UP    256
+#define PXING_KEY_DOWN  257
+#define PXING_KEY_LEFT  258
+#define PXING_KEY_RIGHT 259
+
 typedef struct {
     int runs[MAX_CLUES];
     int count;

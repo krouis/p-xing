@@ -63,6 +63,16 @@ int main(int argc, char* argv[]) {
         if (assist) game_compute_errors(&game, &puzzle, errors);
         render_draw(&puzzle, &game, assist ? errors : NULL);
         ch = render_getch();
+
+        /* Translate ncurses arrow keys to backend-independent PXING_KEY_* values. */
+        switch (ch) {
+            case KEY_UP:    ch = PXING_KEY_UP;    break;
+            case KEY_DOWN:  ch = PXING_KEY_DOWN;  break;
+            case KEY_LEFT:  ch = PXING_KEY_LEFT;  break;
+            case KEY_RIGHT: ch = PXING_KEY_RIGHT; break;
+            default: break;
+        }
+
         if (ch == 'r') {
             game_init(&game);
         } else if (ch == 'u') {
