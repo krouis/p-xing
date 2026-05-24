@@ -11,7 +11,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - name: Set up CMake
         uses: lukka/run-cmake@v1
@@ -28,7 +30,9 @@ jobs:
     needs: build
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - name: Set up CMake
         uses: lukka/run-cmake@v3
@@ -39,4 +43,3 @@ jobs:
 
       - name: Build and run tests
         run: cmake --build build --target test
-
