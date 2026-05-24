@@ -68,6 +68,30 @@ build/src/p-xing examples/p-xing.pbm
 | `r` | Restart puzzle |
 | `q` | Quit |
 
+## Architecture
+
+The codebase is split into two independent layers so that the game logic can be reused under a different frontend (SDL, GTK, web, …) without modification.
+
+**Logic layer** — no display dependencies:
+
+| File | Role |
+|------|------|
+| `include/pbm.h` / `src/pbm.c` | Plain PBM (P1) parser |
+| `include/pxing.h` / `src/pxing.c` | Puzzle types, clue computation, full game state machine |
+
+`pxing.h` defines `PXING_KEY_{UP,DOWN,LEFT,RIGHT}` as backend-independent key constants (values above ASCII range). `game_handle_key()` and all other logic functions use only these constants and standard C — no ncurses anywhere in this layer.
+
+**Render layer** — ncurses-specific, self-contained:
+
+| File | Role |
+|------|------|
+| `include/render.h` / `src/render.c` | ncurses renderer implementing `render_init/cleanup/draw/getch` |
+| `src/main.c` | Wires the two layers; translates ncurses `KEY_*` → `PXING_KEY_*` before passing input to the logic layer |
+
+To add a second backend, implement the four functions declared in `render.h` and map that backend's key events to `PXING_KEY_*` in its own `main`. The logic layer requires zero changes.
+
+The unit tests (`tests/test_pbm.c`) exercise the logic layer only and link without ncurses.
+
 ## Running Tests
 
 ```sh
