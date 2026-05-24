@@ -5,6 +5,7 @@
 #include "pbm.h"
 
 #define MAX_CLUES ((MAX_PBM_LN + 1) / 2)
+#define MAX_UNDO  16
 
 typedef struct {
     int runs[MAX_CLUES];
@@ -31,6 +32,11 @@ typedef struct {
     int won;
     time_t start_time;
     int    solve_seconds; /* frozen at win time */
+    /* undo stack */
+    int          undo_top;
+    cell_state_t undo_grid[MAX_UNDO][MAX_PBM_LN * MAX_PBM_CL];
+    int          undo_cursor_row[MAX_UNDO];
+    int          undo_cursor_col[MAX_UNDO];
 } game_t;
 
 int  compute_clues(const pbm_t *pix, pxing_t *puzzle);
@@ -38,6 +44,7 @@ void game_init(game_t *game);
 int  game_elapsed_seconds(const game_t *game);
 void game_handle_key(game_t *game, const pxing_t *puzzle, int key);
 int  game_check_win(const game_t *game, const pxing_t *puzzle);
+void game_undo(game_t *game);
 void print_row_clues(const pxing_t *puzzle);
 void print_col_clues(const pxing_t *puzzle);
 

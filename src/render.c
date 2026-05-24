@@ -7,11 +7,12 @@
 #define CELL_W 2  /* chars per grid column: cell char + trailing space */
 
 /* Color pair IDs */
-#define CP_CLUE    1
-#define CP_CURSOR  2
-#define CP_FILLED  3
-#define CP_CROSSED 4
-#define CP_WIN     5
+#define CP_CLUE      1
+#define CP_CURSOR    2
+#define CP_FILLED    3
+#define CP_CROSSED   4
+#define CP_WIN       5
+#define CP_HIGHLIGHT 6
 
 static int get_col_depth(const pxing_t *p) {
     int m = 1;
@@ -45,7 +46,8 @@ void render_init(void) {
         init_pair(CP_CURSOR,  COLOR_BLACK,   COLOR_YELLOW);
         init_pair(CP_FILLED,  COLOR_BLACK,   COLOR_WHITE);
         init_pair(CP_CROSSED, COLOR_RED,    -1);
-        init_pair(CP_WIN,     COLOR_BLACK,   COLOR_GREEN);
+        init_pair(CP_WIN,       COLOR_BLACK, COLOR_GREEN);
+        init_pair(CP_HIGHLIGHT, -1,          COLOR_BLUE);
     }
 }
 
@@ -95,10 +97,14 @@ void render_draw(const pxing_t *puzzle, const game_t *game) {
                 game ? game->grid[r * puzzle->width + c] : CELL_UNKNOWN;
             int is_cursor =
                 game && game->cursor_row == r && game->cursor_col == c;
+            int is_band = game && !is_cursor &&
+                (game->cursor_row == r || game->cursor_col == c);
             int x = rw + c * CELL_W;
 
             if (is_cursor)
                 attron(has_colors() ? COLOR_PAIR(CP_CURSOR) : A_REVERSE);
+            else if (is_band && state == CELL_UNKNOWN && has_colors())
+                attron(COLOR_PAIR(CP_HIGHLIGHT));
             else if (state == CELL_FILLED && has_colors())
                 attron(COLOR_PAIR(CP_FILLED));
             else if (state == CELL_CROSSED && has_colors())
@@ -112,6 +118,8 @@ void render_draw(const pxing_t *puzzle, const game_t *game) {
 
             if (is_cursor)
                 attroff(has_colors() ? COLOR_PAIR(CP_CURSOR) : A_REVERSE);
+            else if (is_band && state == CELL_UNKNOWN && has_colors())
+                attroff(COLOR_PAIR(CP_HIGHLIGHT));
             else if (state == CELL_FILLED && has_colors())
                 attroff(COLOR_PAIR(CP_FILLED));
             else if (state == CELL_CROSSED && has_colors())
@@ -133,7 +141,7 @@ void render_draw(const pxing_t *puzzle, const game_t *game) {
         if (has_colors()) attroff(COLOR_PAIR(CP_WIN));
     } else {
         mvprintw(status_y, 0,
-                 "arrows: move  space: fill  x: cross  r: restart  q: quit"
+                 "arrows: move  space: fill  x: cross  u: undo  r: restart  q: quit"
                  "  [%02d:%02d]", mm, ss);
     }
 

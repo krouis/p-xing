@@ -61,6 +61,8 @@ int main(int argc, char* argv[]) {
         ch = render_getch();
         if (ch == 'r') {
             game_init(&game);
+        } else if (ch == 'u') {
+            game_undo(&game);
         } else if (ch != ERR && !game.won) {
             game_handle_key(&game, &puzzle, ch);
             if (game_check_win(&game, &puzzle)) {

@@ -45,6 +45,57 @@ void game_init(game_t *game) {
     game->won         = 0;
     game->start_time  = time(NULL);
     game->solve_seconds = 0;
+    game->undo_top    = 0;
+}
+
+static void game_push_undo(game_t *game) {
+    int slot = game->undo_top % MAX_UNDO;
+    memcpy(game->undo_grid[slot], game->grid, sizeof(game->grid));
+    game->undo_cursor_row[slot] = game->cursor_row;
+    game->undo_cursor_col[slot] = game->cursor_col;
+    game->undo_top++;
+}
+
+void game_undo(game_t *game) {
+    if (game->undo_top == 0) return;
+    game->undo_top--;
+    int slot = game->undo_top % MAX_UNDO;
+    memcpy(game->grid, game->undo_grid[slot], sizeof(game->grid));
+    game->cursor_row = game->undo_cursor_row[slot];
+    game->cursor_col = game->undo_cursor_col[slot];
+    game->won        = 0;
+}
+
+static int clues_match(const clue_t *a, const clue_t *b) {
+    if (a->count != b->count) return 0;
+    for (int k = 0; k < a->count; k++)
+        if (a->runs[k] != b->runs[k]) return 0;
+    return 1;
+}
+
+static void game_apply_auto_cross(game_t *game, const pxing_t *puzzle) {
+    int pixels[MAX_PBM_LN > MAX_PBM_CL ? MAX_PBM_LN : MAX_PBM_CL];
+    clue_t actual;
+
+    for (int r = 0; r < puzzle->height; r++) {
+        for (int c = 0; c < puzzle->width; c++)
+            pixels[c] = (game->grid[r * puzzle->width + c] == CELL_FILLED) ? 1 : 0;
+        compute_line_clue(pixels, puzzle->width, &actual);
+        if (clues_match(&actual, &puzzle->rows[r]))
+            for (int c = 0; c < puzzle->width; c++)
+                if (game->grid[r * puzzle->width + c] == CELL_UNKNOWN)
+                    game->grid[r * puzzle->width + c] = CELL_CROSSED;
+    }
+
+    for (int col = 0; col < puzzle->width; col++) {
+        for (int r = 0; r < puzzle->height; r++)
+            pixels[r] = (game->grid[r * puzzle->width + col] == CELL_FILLED) ? 1 : 0;
+        compute_line_clue(pixels, puzzle->height, &actual);
+        if (clues_match(&actual, &puzzle->cols[col]))
+            for (int r = 0; r < puzzle->height; r++)
+                if (game->grid[r * puzzle->width + col] == CELL_UNKNOWN)
+                    game->grid[r * puzzle->width + col] = CELL_CROSSED;
+    }
 }
 
 int game_elapsed_seconds(const game_t *game) {
@@ -88,9 +139,13 @@ void game_handle_key(game_t *game, const pxing_t *puzzle, int key) {
         case KEY_LEFT:  if (game->cursor_col > 0)                game->cursor_col--; break;
         case KEY_RIGHT: if (game->cursor_col < puzzle->width-1)  game->cursor_col++; break;
         case ' ':
+            game_push_undo(game);
             *cell = (*cell == CELL_FILLED) ? CELL_UNKNOWN : CELL_FILLED;
+            if (*cell == CELL_FILLED)
+                game_apply_auto_cross(game, puzzle);
             break;
         case 'x': case 'X':
+            game_push_undo(game);
             *cell = (*cell == CELL_CROSSED) ? CELL_UNKNOWN : CELL_CROSSED;
             break;
         default: break;
