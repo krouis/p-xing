@@ -1,95 +1,95 @@
 #include "pbm.h"
+#include <string.h>
 
-//skip whitespaces and comments
-int skip_whitespace(int fd) {
+static int read_token(int fd, char *token, size_t token_len) {
     unsigned char buff = '\0';
+    size_t pos = 0;
 
-    // skip whitespaces
-    do {
-        if (read(fd,&buff,1)<=0) return -1;
-    } while (isspace(buff));
-
-    // if comments skip them
-    int comment = (buff == '#') ? 1 : 0;
-    while (comment>0) {
-        if (read(fd, &buff,1)<=0) return -1;
-        if (buff == '\n') {
-            if (read(fd, &buff,1)<=0) return -1;
-            // skip whitespaces
-            while (isspace(buff))
-                if(read(fd,&buff,1)<=0) return -1;
-            comment = (buff == '#') ? 1 : 0;
+    while (1) {
+        if (read(fd, &buff, 1) <= 0)
+            return -1;
+        if (isspace(buff))
+            continue;
+        if (buff == '#') {
+            do {
+                if (read(fd, &buff, 1) <= 0)
+                    return -1;
+            } while (buff != '\n');
+            continue;
         }
+        break;
     }
-    // trackback 1 position before returning
-    if (lseek(fd, -1, SEEK_CUR)==-1) {
-        perror(NULL);
-        return -1;
+
+    do {
+        if (buff == '#') {
+            do {
+                if (read(fd, &buff, 1) <= 0)
+                    break;
+            } while (buff != '\n');
+            break;
+        }
+        if (isspace(buff))
+            break;
+        if (pos + 1 >= token_len) {
+            fprintf(stderr, "format error: PBM token too long\n");
+            return -1;
+        }
+        token[pos++] = (char)buff;
+    } while (read(fd, &buff, 1) == 1);
+
+    token[pos] = '\0';
+    return (pos > 0) ? 0 : -1;
+}
+
+static int parse_positive_int(const char *token) {
+    int value = 0;
+
+    for (int i = 0; token[i] != '\0'; i++) {
+        if (!isdigit((unsigned char)token[i]))
+            return -1;
+        value = (value * 10) + (token[i] - '0');
     }
-    return 0;
+    return value;
 }
 
 int read_pbm_header(int fd, pbm_t* pix) {
-    unsigned char buff = '\0';
-    // read magic
-    pix->type=-1;
-    if(read(fd,&buff,1)==1){
-        //check magic for P1
-        if (buff=='P'){
-            if(read(fd,&buff,1)==1){
-                pix->type = buff - '0';
-            }
-        }
-    }
-    if (pix->type != 1){
+    char token[32];
+
+    pix->type = -1;
+    if (read_token(fd, token, sizeof(token)) != 0 || strcmp(token, "P1") != 0) {
         fprintf(stderr,"format error: not a Plain PBM file\n");
         return -1;
     }
 
-    if (skip_whitespace(fd)<0) {
-        return -1;
-    }
+    pix->type = 1;
     return 0;
 }
 
 int read_dimension(int fd) {
-    unsigned char buff = '\0';
-    int dim = 0; // this is a positive integer, -1 is an error
-    //skip any whitespaces
-    if (skip_whitespace(fd)<0) return -1;
-
-    //read number
-    if(read(fd,&buff,1)<=0) return -1;
-
-    if (isdigit(buff)) {
-        while (isdigit(buff)) {
-            dim = (dim * 10) + (buff - '0');
-            if (read(fd,&buff,1)<=0) {
-                return -1;
-            }
-        }
-    } else {
+    char token[32];
+    if (read_token(fd, token, sizeof(token)) != 0) {
         fprintf(stderr,"format error: did not find dimension\n");
         return -1;
     }
-    return dim;
+    return parse_positive_int(token);
 }
 
 int read_pbm_data(int fd, pbm_t* pix) {
-    unsigned char buff;
+    char token[32];
     int pixels_read = 0;
     int pixels_expected = pix->width * pix->height;
 
     while (pixels_read < pixels_expected) {
-        if (read(fd, &buff, 1) <= 0) {
+        if (read_token(fd, token, sizeof(token)) != 0) {
             fprintf(stderr, "unexpected EOF: couldn't read PBM image of width %d and height %d\n",
                     pix->width, pix->height);
             return -1;
         }
-        if (buff == '0' || buff == '1') {
-            pix->data[pixels_read++] = buff - '0';
-        } else if (!isspace(buff)) {
-            fprintf(stderr, "format error: invalid character '%c' in PBM data\n", buff);
+        if (token[0] != '\0' && token[1] == '\0' &&
+            (token[0] == '0' || token[0] == '1')) {
+            pix->data[pixels_read++] = token[0] - '0';
+        } else {
+            fprintf(stderr, "format error: invalid PBM data token '%s'\n", token);
             return -1;
         }
     }
@@ -126,7 +126,7 @@ int read_pbm(const char* pbm_file, pbm_t* pix) {
     }
 
     if (read_pbm_data(fd, pix) != 0) {
-        fprintf(stderr,"format error: could not read correct PBM height\n");
+        fprintf(stderr,"format error: could not read correct PBM data\n");
         r=-1;
         goto ret;
     }
@@ -159,4 +159,3 @@ int print_pbm(pbm_t* pix) {
     printf("\n");
     return 0;
 }
-

@@ -11,7 +11,7 @@ void display_usage(const char* progname) {
     printf("Options:\n");
     printf("  -h           Display this usage message\n");
     printf("  -v           Display version information\n");
-    printf("  -a           Enable assist mode (highlight wrong cells in red)\n");
+    printf("  -a           Enable assist mode (highlight clue conflicts in red)\n");
 }
 
 void display_license() {
@@ -36,7 +36,17 @@ int main(int argc, char* argv[]) {
         if (strcmp(argv[i], "-a") == 0)       assist = 1;
         else if (strcmp(argv[i], "-v") == 0) { display_version();        return EXIT_SUCCESS; }
         else if (strcmp(argv[i], "-h") == 0) { display_usage(argv[0]);   return EXIT_SUCCESS; }
-        else                                   pbm_idx = i;
+        else if (argv[i][0] == '-') {
+            fprintf(stderr, "Unknown option: %s\n", argv[i]);
+            display_usage(argv[0]);
+            return EXIT_FAILURE;
+        } else if (pbm_idx >= 0) {
+            fprintf(stderr, "Only one PBM file can be specified\n");
+            display_usage(argv[0]);
+            return EXIT_FAILURE;
+        } else {
+            pbm_idx = i;
+        }
     }
 
     if (pbm_idx < 0) {

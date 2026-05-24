@@ -39,7 +39,8 @@ typedef struct {
     time_t start_time;
     int    solve_seconds; /* frozen at win time */
     /* undo stack */
-    int          undo_top;
+    int          undo_head;
+    int          undo_count;
     cell_state_t undo_grid[MAX_UNDO][MAX_PBM_LN * MAX_PBM_CL];
     int          undo_cursor_row[MAX_UNDO];
     int          undo_cursor_col[MAX_UNDO];

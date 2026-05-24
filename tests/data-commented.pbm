@@ -1,0 +1,7 @@
+P1
+# comments are valid anywhere whitespace is valid
+3 2
+1 0 # row 0 mid-line comment
+1
+# row 1 comment
+0 1 0

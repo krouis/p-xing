@@ -18,6 +18,21 @@ void test_read_pbm_with_example_file(void) {
     TEST_ASSERT_EQUAL_INT(1, pix.type);
 }
 
+void test_read_pbm_allows_comments_in_data(void) {
+    pbm_t pix;
+    int result = read_pbm("tests/data-commented.pbm", &pix);
+
+    TEST_ASSERT_EQUAL_INT(0, result);
+    TEST_ASSERT_EQUAL_INT(3, pix.width);
+    TEST_ASSERT_EQUAL_INT(2, pix.height);
+    TEST_ASSERT_EQUAL_INT(1, pix.data[0]);
+    TEST_ASSERT_EQUAL_INT(0, pix.data[1]);
+    TEST_ASSERT_EQUAL_INT(1, pix.data[2]);
+    TEST_ASSERT_EQUAL_INT(0, pix.data[3]);
+    TEST_ASSERT_EQUAL_INT(1, pix.data[4]);
+    TEST_ASSERT_EQUAL_INT(0, pix.data[5]);
+}
+
 /* 3x3 L-shape puzzle (unique solution):
  *  # . .    row clues: [1] [1] [3]
  *  # . .    col clues: [3] [1] [1]
@@ -350,6 +365,26 @@ void test_game_undo_clears_won_flag(void) {
     TEST_ASSERT_EQUAL_INT(0, game.won);
 }
 
+void test_game_undo_stops_at_history_limit(void) {
+    pbm_t pix = make_3x3_lshape();
+    pxing_t puzzle;
+    compute_clues(&pix, &puzzle);
+
+    game_t game;
+    game_init(&game);
+
+    for (int i = 0; i < MAX_UNDO + 4; i++)
+        game_handle_key(&game, &puzzle, 'x');
+
+    for (int i = 0; i < MAX_UNDO; i++)
+        game_undo(&game);
+
+    cell_state_t oldest_kept = game.grid[0];
+    game_undo(&game);
+    TEST_ASSERT_EQUAL_INT(oldest_kept, game.grid[0]);
+    TEST_ASSERT_EQUAL_INT(0, game.undo_count);
+}
+
 /* --- Auto-cross tests --- */
 
 void test_game_auto_cross_completes_row(void) {
@@ -479,6 +514,7 @@ void test_game_auto_cross_no_effect_on_unfill(void) {
 int main() {
     UNITY_BEGIN();
     RUN_TEST(test_read_pbm_with_example_file);
+    RUN_TEST(test_read_pbm_allows_comments_in_data);
     RUN_TEST(test_check_win_correct_solution);
     RUN_TEST(test_check_win_wrong_solution);
     RUN_TEST(test_check_win_empty_grid);
@@ -497,6 +533,7 @@ int main() {
     RUN_TEST(test_game_undo_restores_state);
     RUN_TEST(test_game_undo_multiple_steps);
     RUN_TEST(test_game_undo_clears_won_flag);
+    RUN_TEST(test_game_undo_stops_at_history_limit);
     RUN_TEST(test_game_auto_cross_completes_row);
     RUN_TEST(test_game_auto_cross_completes_col);
     RUN_TEST(test_game_auto_cross_no_effect_on_unfill);
@@ -506,4 +543,3 @@ int main() {
     RUN_TEST(test_game_compute_errors_extra_run_in_row);
     return UNITY_END();
 }
-

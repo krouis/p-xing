@@ -44,15 +44,18 @@ void game_init(game_t *game) {
     game->won         = 0;
     game->start_time  = time(NULL);
     game->solve_seconds = 0;
-    game->undo_top    = 0;
+    game->undo_head   = 0;
+    game->undo_count  = 0;
 }
 
 static void game_push_undo(game_t *game) {
-    int slot = game->undo_top % MAX_UNDO;
+    int slot = game->undo_head;
     memcpy(game->undo_grid[slot], game->grid, sizeof(game->grid));
     game->undo_cursor_row[slot] = game->cursor_row;
     game->undo_cursor_col[slot] = game->cursor_col;
-    game->undo_top++;
+    game->undo_head = (game->undo_head + 1) % MAX_UNDO;
+    if (game->undo_count < MAX_UNDO)
+        game->undo_count++;
 }
 
 void game_set_won(game_t *game) {
@@ -61,9 +64,10 @@ void game_set_won(game_t *game) {
 }
 
 void game_undo(game_t *game) {
-    if (game->undo_top == 0) return;
-    game->undo_top--;
-    int slot = game->undo_top % MAX_UNDO;
+    if (game->undo_count == 0) return;
+    game->undo_head = (game->undo_head + MAX_UNDO - 1) % MAX_UNDO;
+    game->undo_count--;
+    int slot = game->undo_head;
     memcpy(game->grid, game->undo_grid[slot], sizeof(game->grid));
     game->cursor_row = game->undo_cursor_row[slot];
     game->cursor_col = game->undo_cursor_col[slot];
