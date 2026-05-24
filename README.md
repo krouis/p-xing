@@ -10,11 +10,14 @@ A terminal-based nonogram (Picross) game. Load any Plain PBM (P1) image and play
 - Auto-cross: when a line's filled cells satisfy its clue, remaining unknowns are marked automatically
 - Undo (`u`) with a 16-step history
 - Elapsed timer, frozen at solve time
-- Assist mode (`-a`): wrong cells highlighted in red
+- Assist mode (`-a`): clue-conflicting filled cells highlighted in red
 - Win detection with solve-time banner
 - Three bundled puzzles (5×5 cross, 5×5 arrow, 7×7 house)
 
 ## How to Build
+
+The playable TUI requires ncurses. If ncurses is not installed, the logic
+tests can still be configured and built, but the `p-xing` executable is skipped.
 
 ```sh
 # Clone with the Unity test submodule
@@ -40,7 +43,7 @@ p-xing [OPTIONS] <PBM_FILE>
 |--------|-------------|
 | `-h`   | Display usage information |
 | `-v`   | Display version information |
-| `-a`   | Enable assist mode (wrong cells highlighted in red) |
+| `-a`   | Enable assist mode (clue-conflicting filled cells highlighted in red) |
 
 ### Bundled puzzles
 
