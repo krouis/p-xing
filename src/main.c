@@ -70,8 +70,8 @@ int main(int argc, char* argv[]) {
         } else if (ch != ERR && !game.won) {
             game_handle_key(&game, &puzzle, ch);
             if (game_check_win(&game, &puzzle)) {
-                game.won          = 1;
                 game.solve_seconds = game_elapsed_seconds(&game);
+                game.won           = 1;
             }
         }
     } while (ch != 'q');
