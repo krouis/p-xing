@@ -11,6 +11,7 @@ void display_usage(const char* progname) {
     printf("Options:\n");
     printf("  -h           Display this usage message\n");
     printf("  -v           Display version information\n");
+    printf("  -a           Enable assist mode (highlight wrong cells in red)\n");
 }
 
 void display_license() {
@@ -28,22 +29,23 @@ void display_version() {
 }
 
 int main(int argc, char* argv[]) {
-    if (argc < 2 ) {
+    int assist  = 0;
+    int pbm_idx = -1;
+
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "-a") == 0)       assist = 1;
+        else if (strcmp(argv[i], "-v") == 0) { display_version();        return EXIT_SUCCESS; }
+        else if (strcmp(argv[i], "-h") == 0) { display_usage(argv[0]);   return EXIT_SUCCESS; }
+        else                                   pbm_idx = i;
+    }
+
+    if (pbm_idx < 0) {
         display_usage(argv[0]);
-	return EXIT_FAILURE;
+        return EXIT_FAILURE;
     }
-    if (argc == 2) {
-        if (strcmp(argv[1], "-v") == 0) {
-            display_version();
-            return EXIT_SUCCESS;
-        }
-        if (strcmp(argv[1], "-h") == 0) {
-            display_usage(argv[0]);
-            return EXIT_SUCCESS;
-        }
-    }
+
     pbm_t pix;
-    if (read_pbm(argv[1], &pix) != 0) {
+    if (read_pbm(argv[pbm_idx], &pix) != 0) {
         return EXIT_FAILURE;
     }
 
@@ -55,9 +57,11 @@ int main(int argc, char* argv[]) {
 
     render_init();
 
+    int errors[MAX_PBM_LN * MAX_PBM_CL];
     int ch;
     do {
-        render_draw(&puzzle, &game);
+        if (assist) game_compute_errors(&game, &puzzle, errors);
+        render_draw(&puzzle, &game, assist ? errors : NULL);
         ch = render_getch();
         if (ch == 'r') {
             game_init(&game);

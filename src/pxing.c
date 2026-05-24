@@ -152,6 +152,56 @@ void game_handle_key(game_t *game, const pxing_t *puzzle, int key) {
     }
 }
 
+static void mark_line_errors(const cell_state_t *line, int len,
+                              const clue_t *expected, int *errors) {
+    int clue_idx = 0;
+    int run_start = -1;
+    int run_len = 0;
+
+    for (int i = 0; i <= len; i++) {
+        int filled = (i < len) && (line[i] == CELL_FILLED);
+        if (filled) {
+            if (run_start < 0) { run_start = i; run_len = 0; }
+            run_len++;
+        } else if (run_start >= 0) {
+            int bad = (clue_idx >= expected->count) ||
+                      (run_len > expected->runs[clue_idx]);
+            if (bad)
+                for (int k = run_start; k < run_start + run_len; k++)
+                    errors[k] = 1;
+            clue_idx++;
+            run_start = -1;
+            run_len   = 0;
+        }
+    }
+}
+
+void game_compute_errors(const game_t *game, const pxing_t *puzzle,
+                         int errors[MAX_PBM_LN * MAX_PBM_CL]) {
+    memset(errors, 0, MAX_PBM_LN * MAX_PBM_CL * sizeof(int));
+
+    cell_state_t line[MAX_PBM_LN > MAX_PBM_CL ? MAX_PBM_LN : MAX_PBM_CL];
+    int          lerr[MAX_PBM_LN > MAX_PBM_CL ? MAX_PBM_LN : MAX_PBM_CL];
+
+    for (int r = 0; r < puzzle->height; r++) {
+        for (int c = 0; c < puzzle->width; c++)
+            line[c] = game->grid[r * puzzle->width + c];
+        memset(lerr, 0, puzzle->width * sizeof(int));
+        mark_line_errors(line, puzzle->width, &puzzle->rows[r], lerr);
+        for (int c = 0; c < puzzle->width; c++)
+            if (lerr[c]) errors[r * puzzle->width + c] = 1;
+    }
+
+    for (int col = 0; col < puzzle->width; col++) {
+        for (int r = 0; r < puzzle->height; r++)
+            line[r] = game->grid[r * puzzle->width + col];
+        memset(lerr, 0, puzzle->height * sizeof(int));
+        mark_line_errors(line, puzzle->height, &puzzle->cols[col], lerr);
+        for (int r = 0; r < puzzle->height; r++)
+            if (lerr[r]) errors[r * puzzle->width + col] = 1;
+    }
+}
+
 void print_row_clues(const pxing_t *puzzle) {
     printf("Row clues:\n");
     for (int i = 0; i < puzzle->height; i++) {

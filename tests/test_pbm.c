@@ -378,6 +378,76 @@ void test_game_auto_cross_completes_col(void) {
     TEST_ASSERT_EQUAL_INT(CELL_UNKNOWN, (int)game.grid[2*3+0]); /* row 2 not done */
 }
 
+/* --- Error detection (assist mode) tests --- */
+
+void test_game_compute_errors_empty_grid(void) {
+    pbm_t pix = make_3x3_lshape();
+    pxing_t puzzle;
+    compute_clues(&pix, &puzzle);
+
+    game_t game;
+    game_init(&game);
+
+    int errors[MAX_PBM_LN * MAX_PBM_CL];
+    game_compute_errors(&game, &puzzle, errors);
+
+    for (int i = 0; i < 9; i++)
+        TEST_ASSERT_EQUAL_INT(0, errors[i]);
+}
+
+void test_game_compute_errors_valid_fill(void) {
+    pbm_t pix = make_3x3_lshape();
+    pxing_t puzzle;
+    compute_clues(&pix, &puzzle);
+
+    game_t game;
+    game_init(&game);
+    /* Row 0 clue [1]: filling only (0,0) is valid. */
+    game.grid[0*3+0] = CELL_FILLED;
+
+    int errors[MAX_PBM_LN * MAX_PBM_CL];
+    game_compute_errors(&game, &puzzle, errors);
+
+    TEST_ASSERT_EQUAL_INT(0, errors[0*3+0]);
+}
+
+void test_game_compute_errors_overlong_row_run(void) {
+    pbm_t pix = make_3x3_lshape();
+    pxing_t puzzle;
+    compute_clues(&pix, &puzzle);
+
+    game_t game;
+    game_init(&game);
+    /* Row 0 clue [1]: two consecutive fills exceed it → both flagged. */
+    game.grid[0*3+0] = CELL_FILLED;
+    game.grid[0*3+1] = CELL_FILLED;
+
+    int errors[MAX_PBM_LN * MAX_PBM_CL];
+    game_compute_errors(&game, &puzzle, errors);
+
+    TEST_ASSERT_EQUAL_INT(1, errors[0*3+0]);
+    TEST_ASSERT_EQUAL_INT(1, errors[0*3+1]);
+    TEST_ASSERT_EQUAL_INT(0, errors[0*3+2]);
+}
+
+void test_game_compute_errors_extra_run_in_row(void) {
+    pbm_t pix = make_3x3_lshape();
+    pxing_t puzzle;
+    compute_clues(&pix, &puzzle);
+
+    game_t game;
+    game_init(&game);
+    /* Row 0 clue [1]: two separate single fills → second has no clue slot. */
+    game.grid[0*3+0] = CELL_FILLED;
+    game.grid[0*3+2] = CELL_FILLED;
+
+    int errors[MAX_PBM_LN * MAX_PBM_CL];
+    game_compute_errors(&game, &puzzle, errors);
+
+    TEST_ASSERT_EQUAL_INT(0, errors[0*3+0]); /* first run matches [1] */
+    TEST_ASSERT_EQUAL_INT(1, errors[0*3+2]); /* second run has no clue */
+}
+
 void test_game_auto_cross_no_effect_on_unfill(void) {
     pbm_t pix = make_3x3_lshape();
     pxing_t puzzle;
@@ -416,6 +486,10 @@ int main() {
     RUN_TEST(test_game_auto_cross_completes_row);
     RUN_TEST(test_game_auto_cross_completes_col);
     RUN_TEST(test_game_auto_cross_no_effect_on_unfill);
+    RUN_TEST(test_game_compute_errors_empty_grid);
+    RUN_TEST(test_game_compute_errors_valid_fill);
+    RUN_TEST(test_game_compute_errors_overlong_row_run);
+    RUN_TEST(test_game_compute_errors_extra_run_in_row);
     return UNITY_END();
 }
 
