@@ -136,9 +136,9 @@ void test_game_handle_key_fill_toggle(void) {
     game_init(&game);
 
     TEST_ASSERT_EQUAL_INT(CELL_UNKNOWN, (int)game.grid[0]);
-    game_handle_key(&game, &puzzle, ' ');
+    game_handle_key(&game, &puzzle, ' ', 0);
     TEST_ASSERT_EQUAL_INT(CELL_FILLED,  (int)game.grid[0]);
-    game_handle_key(&game, &puzzle, ' ');
+    game_handle_key(&game, &puzzle, ' ', 0);
     TEST_ASSERT_EQUAL_INT(CELL_UNKNOWN, (int)game.grid[0]);
 }
 
@@ -150,9 +150,9 @@ void test_game_handle_key_cross_toggle(void) {
     game_t game;
     game_init(&game);
 
-    game_handle_key(&game, &puzzle, 'x');
+    game_handle_key(&game, &puzzle, 'x', 0);
     TEST_ASSERT_EQUAL_INT(CELL_CROSSED, (int)game.grid[0]);
-    game_handle_key(&game, &puzzle, 'x');
+    game_handle_key(&game, &puzzle, 'x', 0);
     TEST_ASSERT_EQUAL_INT(CELL_UNKNOWN, (int)game.grid[0]);
 }
 
@@ -165,24 +165,57 @@ void test_game_handle_key_cursor_bounds(void) {
     game_init(&game);
 
     /* Can't move left or up from origin */
-    game_handle_key(&game, &puzzle, PXING_KEY_LEFT);
+    game_handle_key(&game, &puzzle, PXING_KEY_LEFT, 0);
     TEST_ASSERT_EQUAL_INT(0, game.cursor_col);
-    game_handle_key(&game, &puzzle, PXING_KEY_UP);
+    game_handle_key(&game, &puzzle, PXING_KEY_UP, 0);
     TEST_ASSERT_EQUAL_INT(0, game.cursor_row);
 
     /* Move to bottom-right corner */
-    game_handle_key(&game, &puzzle, PXING_KEY_RIGHT);
-    game_handle_key(&game, &puzzle, PXING_KEY_RIGHT);
-    game_handle_key(&game, &puzzle, PXING_KEY_DOWN);
-    game_handle_key(&game, &puzzle, PXING_KEY_DOWN);
+    game_handle_key(&game, &puzzle, PXING_KEY_RIGHT, 0);
+    game_handle_key(&game, &puzzle, PXING_KEY_RIGHT, 0);
+    game_handle_key(&game, &puzzle, PXING_KEY_DOWN, 0);
+    game_handle_key(&game, &puzzle, PXING_KEY_DOWN, 0);
     TEST_ASSERT_EQUAL_INT(2, game.cursor_col);
     TEST_ASSERT_EQUAL_INT(2, game.cursor_row);
 
     /* Can't move beyond the grid edge */
-    game_handle_key(&game, &puzzle, PXING_KEY_RIGHT);
+    game_handle_key(&game, &puzzle, PXING_KEY_RIGHT, 0);
     TEST_ASSERT_EQUAL_INT(2, game.cursor_col);
-    game_handle_key(&game, &puzzle, PXING_KEY_DOWN);
+    game_handle_key(&game, &puzzle, PXING_KEY_DOWN, 0);
     TEST_ASSERT_EQUAL_INT(2, game.cursor_row);
+}
+
+void test_game_handle_key_vim_movement(void) {
+    pbm_t pix = make_3x3_lshape();
+    pxing_t puzzle;
+    compute_clues(&pix, &puzzle);
+
+    game_t game;
+    game_init(&game);
+
+    game_handle_key(&game, &puzzle, 'l', 0);
+    game_handle_key(&game, &puzzle, 'j', 0);
+    TEST_ASSERT_EQUAL_INT(1, game.cursor_col);
+    TEST_ASSERT_EQUAL_INT(1, game.cursor_row);
+
+    game_handle_key(&game, &puzzle, 'h', 0);
+    game_handle_key(&game, &puzzle, 'k', 0);
+    TEST_ASSERT_EQUAL_INT(0, game.cursor_col);
+    TEST_ASSERT_EQUAL_INT(0, game.cursor_row);
+}
+
+void test_game_handle_key_normal_mode_does_not_auto_cross(void) {
+    pbm_t pix = make_3x3_lshape();
+    pxing_t puzzle;
+    compute_clues(&pix, &puzzle);
+
+    game_t game;
+    game_init(&game);
+
+    game_handle_key(&game, &puzzle, ' ', 0);
+    TEST_ASSERT_EQUAL_INT(CELL_FILLED,  (int)game.grid[0*3+0]);
+    TEST_ASSERT_EQUAL_INT(CELL_UNKNOWN, (int)game.grid[0*3+1]);
+    TEST_ASSERT_EQUAL_INT(CELL_UNKNOWN, (int)game.grid[0*3+2]);
 }
 
 void test_game_elapsed_seconds_non_negative(void) {
@@ -304,10 +337,10 @@ void test_game_undo_restores_state(void) {
     game_t game;
     game_init(&game);
 
-    /* Fill (0,0) — also auto-crosses (0,1) and (0,2) since row 0 clue is [1] */
-    game_handle_key(&game, &puzzle, ' ');
+    /* Fill (0,0) in normal mode: no auto-crosses are applied. */
+    game_handle_key(&game, &puzzle, ' ', 0);
     TEST_ASSERT_EQUAL_INT(CELL_FILLED,  (int)game.grid[0*3+0]);
-    TEST_ASSERT_EQUAL_INT(CELL_CROSSED, (int)game.grid[0*3+1]);
+    TEST_ASSERT_EQUAL_INT(CELL_UNKNOWN, (int)game.grid[0*3+1]);
 
     /* Undo must restore the full pre-fill state */
     game_undo(&game);
@@ -326,20 +359,20 @@ void test_game_undo_multiple_steps(void) {
     game_t game;
     game_init(&game);
 
-    /* Fill (0,0): push undo #1; auto-crosses (0,1) and (0,2). */
-    game_handle_key(&game, &puzzle, ' ');
+    /* Fill (0,0): push undo #1. */
+    game_handle_key(&game, &puzzle, ' ', 0);
     /* Move right to (0,1): no undo push. */
-    game_handle_key(&game, &puzzle, PXING_KEY_RIGHT);
-    /* Toggle cross on already-crossed (0,1): push undo #2; (0,1) → UNKNOWN. */
-    game_handle_key(&game, &puzzle, 'x');
+    game_handle_key(&game, &puzzle, PXING_KEY_RIGHT, 0);
+    /* Toggle cross on (0,1): push undo #2. */
+    game_handle_key(&game, &puzzle, 'x', 0);
 
-    TEST_ASSERT_EQUAL_INT(CELL_FILLED,  (int)game.grid[0*3+0]);
-    TEST_ASSERT_EQUAL_INT(CELL_UNKNOWN, (int)game.grid[0*3+1]);
-
-    /* Undo #2 → restores FILLED/CROSSED/CROSSED; cursor back at (0,1). */
-    game_undo(&game);
     TEST_ASSERT_EQUAL_INT(CELL_FILLED,  (int)game.grid[0*3+0]);
     TEST_ASSERT_EQUAL_INT(CELL_CROSSED, (int)game.grid[0*3+1]);
+
+    /* Undo #2 → restores only the fill; cursor back at (0,1). */
+    game_undo(&game);
+    TEST_ASSERT_EQUAL_INT(CELL_FILLED,  (int)game.grid[0*3+0]);
+    TEST_ASSERT_EQUAL_INT(CELL_UNKNOWN, (int)game.grid[0*3+1]);
     TEST_ASSERT_EQUAL_INT(0, game.cursor_row);
     TEST_ASSERT_EQUAL_INT(1, game.cursor_col);
 
@@ -358,7 +391,7 @@ void test_game_undo_clears_won_flag(void) {
 
     game_t game;
     game_init(&game);
-    game_handle_key(&game, &puzzle, ' ');   /* fill (0,0) first, push undo */
+    game_handle_key(&game, &puzzle, ' ', 0);   /* fill (0,0) first, push undo */
     game.won = 1;
 
     game_undo(&game);
@@ -374,7 +407,7 @@ void test_game_undo_stops_at_history_limit(void) {
     game_init(&game);
 
     for (int i = 0; i < MAX_UNDO + 4; i++)
-        game_handle_key(&game, &puzzle, 'x');
+        game_handle_key(&game, &puzzle, 'x', 0);
 
     for (int i = 0; i < MAX_UNDO; i++)
         game_undo(&game);
@@ -396,7 +429,7 @@ void test_game_auto_cross_completes_row(void) {
     game_init(&game);
 
     /* Row 0 clue is [1].  Filling (0,0) satisfies it → (0,1) and (0,2) auto-crossed. */
-    game_handle_key(&game, &puzzle, ' ');
+    game_handle_key(&game, &puzzle, ' ', 1);
     TEST_ASSERT_EQUAL_INT(CELL_FILLED,  (int)game.grid[0*3+0]);
     TEST_ASSERT_EQUAL_INT(CELL_CROSSED, (int)game.grid[0*3+1]);
     TEST_ASSERT_EQUAL_INT(CELL_CROSSED, (int)game.grid[0*3+2]);
@@ -411,15 +444,15 @@ void test_game_auto_cross_completes_col(void) {
     game_init(&game);
 
     /* Navigate to (2,1); col 1 clue is [1]. */
-    game_handle_key(&game, &puzzle, PXING_KEY_DOWN);
-    game_handle_key(&game, &puzzle, PXING_KEY_DOWN);
-    game_handle_key(&game, &puzzle, PXING_KEY_RIGHT);
+    game_handle_key(&game, &puzzle, PXING_KEY_DOWN, 0);
+    game_handle_key(&game, &puzzle, PXING_KEY_DOWN, 0);
+    game_handle_key(&game, &puzzle, PXING_KEY_RIGHT, 0);
     TEST_ASSERT_EQUAL_INT(2, game.cursor_row);
     TEST_ASSERT_EQUAL_INT(1, game.cursor_col);
 
     /* Filling (2,1) satisfies col 1 [1] → (0,1) and (1,1) auto-crossed.
      * Row 2 clue [3] is NOT yet satisfied, so no row auto-cross. */
-    game_handle_key(&game, &puzzle, ' ');
+    game_handle_key(&game, &puzzle, ' ', 1);
     TEST_ASSERT_EQUAL_INT(CELL_FILLED,  (int)game.grid[2*3+1]);
     TEST_ASSERT_EQUAL_INT(CELL_CROSSED, (int)game.grid[0*3+1]);
     TEST_ASSERT_EQUAL_INT(CELL_CROSSED, (int)game.grid[1*3+1]);
@@ -473,7 +506,7 @@ void test_game_compute_errors_overlong_row_run(void) {
     int errors[MAX_PBM_LN * MAX_PBM_CL];
     game_compute_errors(&game, &puzzle, errors);
 
-    TEST_ASSERT_EQUAL_INT(1, errors[0*3+0]);
+    TEST_ASSERT_EQUAL_INT(0, errors[0*3+0]);
     TEST_ASSERT_EQUAL_INT(1, errors[0*3+1]);
     TEST_ASSERT_EQUAL_INT(0, errors[0*3+2]);
 }
@@ -505,7 +538,7 @@ void test_game_auto_cross_no_effect_on_unfill(void) {
     game_init(&game);
 
     /* Fill and then unfill (0,0) — toggling to UNKNOWN must not auto-cross. */
-    game_handle_key(&game, &puzzle, ' '); /* fill  → auto-crosses (0,1),(0,2) */
+    game_handle_key(&game, &puzzle, ' ', 1); /* fill  → auto-crosses (0,1),(0,2) */
     game_undo(&game);                     /* restore: all UNKNOWN */
     TEST_ASSERT_EQUAL_INT(CELL_UNKNOWN, (int)game.grid[0*3+1]);
     TEST_ASSERT_EQUAL_INT(CELL_UNKNOWN, (int)game.grid[0*3+2]);
@@ -523,6 +556,8 @@ int main() {
     RUN_TEST(test_game_handle_key_fill_toggle);
     RUN_TEST(test_game_handle_key_cross_toggle);
     RUN_TEST(test_game_handle_key_cursor_bounds);
+    RUN_TEST(test_game_handle_key_vim_movement);
+    RUN_TEST(test_game_handle_key_normal_mode_does_not_auto_cross);
     RUN_TEST(test_game_elapsed_seconds_non_negative);
     RUN_TEST(test_game_elapsed_frozen_on_win);
     RUN_TEST(test_cross_puzzle_dimensions_and_clues);

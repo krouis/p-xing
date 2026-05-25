@@ -24,6 +24,7 @@ static void compute_line_clue(const int *pixels, int len, clue_t *clue) {
 int compute_clues(const pbm_t *pix, pxing_t *puzzle) {
     puzzle->width  = pix->width;
     puzzle->height = pix->height;
+    memcpy(puzzle->solution, pix->data, sizeof(puzzle->solution));
 
     for (int row = 0; row < pix->height; row++)
         compute_line_clue(&pix->data[row * pix->width], pix->width, &puzzle->rows[row]);
@@ -113,43 +114,37 @@ int game_elapsed_seconds(const game_t *game) {
 }
 
 int game_check_win(const game_t *game, const pxing_t *puzzle) {
-    int pixels[MAX_PBM_LN];
-    clue_t actual;
-
     for (int r = 0; r < puzzle->height; r++) {
-        for (int c = 0; c < puzzle->width; c++)
-            pixels[c] = (game->grid[r * puzzle->width + c] == CELL_FILLED) ? 1 : 0;
-        compute_line_clue(pixels, puzzle->width, &actual);
-        const clue_t *expected = &puzzle->rows[r];
-        if (actual.count != expected->count) return 0;
-        for (int k = 0; k < actual.count; k++)
-            if (actual.runs[k] != expected->runs[k]) return 0;
-    }
-
-    for (int c = 0; c < puzzle->width; c++) {
-        for (int r = 0; r < puzzle->height; r++)
-            pixels[r] = (game->grid[r * puzzle->width + c] == CELL_FILLED) ? 1 : 0;
-        compute_line_clue(pixels, puzzle->height, &actual);
-        const clue_t *expected = &puzzle->cols[c];
-        if (actual.count != expected->count) return 0;
-        for (int k = 0; k < actual.count; k++)
-            if (actual.runs[k] != expected->runs[k]) return 0;
+        for (int c = 0; c < puzzle->width; c++) {
+            int idx = r * puzzle->width + c;
+            int filled = (game->grid[idx] == CELL_FILLED);
+            if (filled != puzzle->solution[idx])
+                return 0;
+        }
     }
 
     return 1;
 }
 
-void game_handle_key(game_t *game, const pxing_t *puzzle, int key) {
+void game_handle_key(game_t *game, const pxing_t *puzzle, int key, int auto_cross) {
     cell_state_t *cell = &game->grid[game->cursor_row * puzzle->width + game->cursor_col];
     switch (key) {
-        case PXING_KEY_UP:    if (game->cursor_row > 0)                game->cursor_row--; break;
-        case PXING_KEY_DOWN:  if (game->cursor_row < puzzle->height-1) game->cursor_row++; break;
-        case PXING_KEY_LEFT:  if (game->cursor_col > 0)                game->cursor_col--; break;
-        case PXING_KEY_RIGHT: if (game->cursor_col < puzzle->width-1)  game->cursor_col++; break;
+        case PXING_KEY_UP: case 'k': case 'K':
+            if (game->cursor_row > 0) game->cursor_row--;
+            break;
+        case PXING_KEY_DOWN: case 'j': case 'J':
+            if (game->cursor_row < puzzle->height-1) game->cursor_row++;
+            break;
+        case PXING_KEY_LEFT: case 'h': case 'H':
+            if (game->cursor_col > 0) game->cursor_col--;
+            break;
+        case PXING_KEY_RIGHT: case 'l': case 'L':
+            if (game->cursor_col < puzzle->width-1) game->cursor_col++;
+            break;
         case ' ':
             game_push_undo(game);
             *cell = (*cell == CELL_FILLED) ? CELL_UNKNOWN : CELL_FILLED;
-            if (*cell == CELL_FILLED)
+            if (auto_cross && *cell == CELL_FILLED)
                 game_apply_auto_cross(game, puzzle);
             break;
         case 'x': case 'X':
@@ -160,53 +155,16 @@ void game_handle_key(game_t *game, const pxing_t *puzzle, int key) {
     }
 }
 
-static void mark_line_errors(const cell_state_t *line, int len,
-                              const clue_t *expected, int *errors) {
-    int clue_idx = 0;
-    int run_start = -1;
-    int run_len = 0;
-
-    for (int i = 0; i <= len; i++) {
-        int filled = (i < len) && (line[i] == CELL_FILLED);
-        if (filled) {
-            if (run_start < 0) { run_start = i; run_len = 0; }
-            run_len++;
-        } else if (run_start >= 0) {
-            int bad = (clue_idx >= expected->count) ||
-                      (run_len > expected->runs[clue_idx]);
-            if (bad)
-                for (int k = run_start; k < run_start + run_len; k++)
-                    errors[k] = 1;
-            clue_idx++;
-            run_start = -1;
-            run_len   = 0;
-        }
-    }
-}
-
 void game_compute_errors(const game_t *game, const pxing_t *puzzle,
                          int errors[MAX_PBM_LN * MAX_PBM_CL]) {
     memset(errors, 0, MAX_PBM_LN * MAX_PBM_CL * sizeof(int));
 
-    cell_state_t line[MAX_PBM_LN > MAX_PBM_CL ? MAX_PBM_LN : MAX_PBM_CL];
-    int          lerr[MAX_PBM_LN > MAX_PBM_CL ? MAX_PBM_LN : MAX_PBM_CL];
-
     for (int r = 0; r < puzzle->height; r++) {
-        for (int c = 0; c < puzzle->width; c++)
-            line[c] = game->grid[r * puzzle->width + c];
-        memset(lerr, 0, puzzle->width * sizeof(int));
-        mark_line_errors(line, puzzle->width, &puzzle->rows[r], lerr);
-        for (int c = 0; c < puzzle->width; c++)
-            if (lerr[c]) errors[r * puzzle->width + c] = 1;
-    }
-
-    for (int col = 0; col < puzzle->width; col++) {
-        for (int r = 0; r < puzzle->height; r++)
-            line[r] = game->grid[r * puzzle->width + col];
-        memset(lerr, 0, puzzle->height * sizeof(int));
-        mark_line_errors(line, puzzle->height, &puzzle->cols[col], lerr);
-        for (int r = 0; r < puzzle->height; r++)
-            if (lerr[r]) errors[r * puzzle->width + col] = 1;
+        for (int c = 0; c < puzzle->width; c++) {
+            int idx = r * puzzle->width + c;
+            if (game->grid[idx] == CELL_FILLED && !puzzle->solution[idx])
+                errors[idx] = 1;
+        }
     }
 }
 

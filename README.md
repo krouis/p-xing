@@ -6,12 +6,12 @@ A terminal-based nonogram (Picross) game. Load any Plain PBM (P1) image and play
 
 - Derives row and column clues from any Plain PBM (P1) file
 - Full ncurses TUI: clue display, cursor, cell fill/cross toggle
-- Auto-cross: when a line's filled cells satisfy its clue, remaining unknowns are marked automatically
+- Normal mode allows free fill/cross marking without automatic crosses
+- Assist mode (`-a`): active row/column crosshair, auto-cross, and wrong filled cells highlighted in red
 - Undo (`u`) with a 16-step history
 - Elapsed timer, frozen at solve time
-- Assist mode (`-a`): active row/column crosshair plus clue-conflicting filled cells highlighted in red
 - Win detection with solve-time banner
-- Three bundled puzzles (5×5 cross, 5×5 arrow, 7×7 house)
+- More than 100 bundled puzzles, mostly 15x15, across easy/medium/hard levels
 
 ## How to Build
 
@@ -35,21 +35,27 @@ The binary is at `build/src/p-xing`.
 ## Usage
 
 ```
-p-xing [OPTIONS] <PBM_FILE>
+p-xing [OPTIONS] [PBM_FILE]
 ```
+
+If `PBM_FILE` is omitted, `p-xing` loads the bundled PBMs from `puzzles/`.
+After solving a bundled puzzle, press `n` to advance to the next one; the list
+wraps around after the last puzzle.
 
 | Option | Description |
 |--------|-------------|
 | `-h`   | Display usage information |
 | `-v`   | Display version information |
-| `-a`   | Enable assist mode (crosshair plus clue-conflict highlighting) |
+| `-a`   | Enable assist mode (crosshair, auto-cross, wrong-fill highlighting) |
 
 ### Bundled puzzles
 
 ```sh
+build/src/p-xing                         # cycle through bundled puzzles
 build/src/p-xing puzzles/cross-5x5.pbm
 build/src/p-xing puzzles/arrow-5x5.pbm
 build/src/p-xing puzzles/house-7x7.pbm
+build/src/p-xing puzzles/hard-mountains-16x10.pbm
 build/src/p-xing -a puzzles/house-7x7.pbm   # with error highlighting
 ```
 
@@ -63,11 +69,12 @@ build/src/p-xing examples/p-xing.pbm
 
 | Key | Action |
 |-----|--------|
-| Arrow keys | Move cursor |
+| Arrow keys / `h` `j` `k` `l` | Move cursor |
 | `Space` | Fill / unfill cell |
 | `x` | Cross / uncross cell |
 | `u` | Undo last fill or cross |
 | `r` | Restart puzzle |
+| `n` | Next bundled puzzle in playlist mode |
 | `q` | Quit |
 
 ## Architecture

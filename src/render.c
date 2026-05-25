@@ -145,12 +145,12 @@ void render_draw(const pxing_t *puzzle, const game_t *game, const int *errors) {
     if (game && game->won) {
         if (has_colors()) attron(COLOR_PAIR(CP_WIN));
         mvprintw(status_y, 0,
-                 " *** Solved in %02d:%02d!  r: play again  q: quit *** ",
+                 " *** Solved in %02d:%02d!  r: restart  n: next  q: quit *** ",
                  mm, ss);
         if (has_colors()) attroff(COLOR_PAIR(CP_WIN));
     } else {
         mvprintw(status_y, 0,
-                 "arrows: move  space: fill  x: cross  u: undo  r: restart  q: quit"
+                 "arrows/hjkl: move  space: fill  x: cross  u: undo  r: restart  n: next  q: quit"
                  "  [%02d:%02d]%s", mm, ss, errors ? "  [assist]" : "");
     }
 

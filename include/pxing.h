@@ -21,6 +21,7 @@ typedef struct {
 typedef struct {
     clue_t rows[MAX_PBM_LN];
     clue_t cols[MAX_PBM_CL];
+    int solution[MAX_PBM_LN * MAX_PBM_CL];
     int height;
     int width;
 } pxing_t;
@@ -49,7 +50,7 @@ typedef struct {
 int  compute_clues(const pbm_t *pix, pxing_t *puzzle);
 void game_init(game_t *game);
 int  game_elapsed_seconds(const game_t *game);
-void game_handle_key(game_t *game, const pxing_t *puzzle, int key);
+void game_handle_key(game_t *game, const pxing_t *puzzle, int key, int auto_cross);
 int  game_check_win(const game_t *game, const pxing_t *puzzle);
 void game_undo(game_t *game);
 void game_set_won(game_t *game);
