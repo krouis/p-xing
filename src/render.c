@@ -60,6 +60,7 @@ void render_cleanup(void) {
 void render_draw(const pxing_t *puzzle, const game_t *game, const int *errors) {
     int depth = get_col_depth(puzzle);
     int rw    = get_row_clue_width(puzzle);
+    int assist = errors != NULL;
 
     clear();
 
@@ -99,7 +100,7 @@ void render_draw(const pxing_t *puzzle, const game_t *game, const int *errors) {
                 game ? game->grid[r * puzzle->width + c] : CELL_UNKNOWN;
             int is_cursor =
                 game && !game->won && game->cursor_row == r && game->cursor_col == c;
-            int is_band = game && !game->won && !is_cursor &&
+            int is_band = assist && game && !game->won && !is_cursor &&
                 (game->cursor_row == r || game->cursor_col == c);
             int is_error = errors && state == CELL_FILLED &&
                 errors[r * puzzle->width + c];
