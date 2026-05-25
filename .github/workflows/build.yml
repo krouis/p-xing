@@ -43,3 +43,24 @@ jobs:
 
       - name: Build and run tests
         run: cmake --build build --target test
+
+  coverage:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Configure coverage build
+        run: cmake -S . -B build-coverage -DCMAKE_BUILD_TYPE=Debug -DENABLE_COVERAGE=ON
+
+      - name: Build and run coverage
+        run: cmake --build build-coverage --target coverage
+
+      - name: Upload gcov reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: gcov-reports
+          path: build-coverage/*.gcov

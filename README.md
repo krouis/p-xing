@@ -109,6 +109,17 @@ cd build && ctest
 cd build && ./tests/test_pbm
 ```
 
+### Coverage
+
+```sh
+cmake -S . -B build-coverage -DENABLE_COVERAGE=ON
+cmake --build build-coverage --target coverage
+```
+
+The coverage target runs the tests and writes `pbm.c.gcov` and `pxing.c.gcov`
+in `build-coverage/`, along with line and branch coverage summaries from
+`gcov`.
+
 ## License
 
 BSD 2-Clause License. See the LICENSE file for details.
