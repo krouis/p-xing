@@ -33,8 +33,11 @@ jobs:
       - name: Configure
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
 
-      - name: Build and run tests
-        run: cmake --build build --target test --parallel
+      - name: Build tests
+        run: cmake --build build --parallel
+
+      - name: Run tests
+        run: ctest --test-dir build --output-on-failure
 
   coverage:
     runs-on: ubuntu-latest
